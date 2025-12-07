@@ -320,7 +320,7 @@ sigchld_handler(int sig)
 }
 
 void
-printres(struct argument *exp, uint16_t port, char *result)
+printres(struct argument *exp, uint16_t port, const char *result)
 {
 	fprintf(stdout, "%s:%d %s\n",
 	    addr_ntoa(&exp->addr), port, result);
@@ -1183,9 +1183,13 @@ main(int argc, char **argv)
        
 	/* revoke privs */
 #ifdef HAVE_SETEUID
-        seteuid(getuid());
+    if (seteuid(getuid()) < 0) {
+        errx(1, "seteuid");
+    }
 #endif /* HAVE_SETEUID */
-        setuid(getuid());
+    if (setuid(getuid()) < 0) {
+        errx(1, "setuid");
+    }
 
 	/* Set up our port ranges */
 	if (ss_nports == 0) {

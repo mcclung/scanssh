@@ -133,7 +133,7 @@ void waitforcommands(int, int);
 
 void argument_free(struct argument *);
 void postres(struct argument *, const char *fmt, ...);
-void printres(struct argument *, uint16_t, char *);
+void printres(struct argument *, uint16_t, const char *);
 
 int probe_haswork(void);
 
