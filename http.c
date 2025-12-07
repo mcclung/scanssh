@@ -75,7 +75,7 @@ void http_errorcb(struct bufferevent *bev, short what, void *parameter);
 #define HTTP11_OK "HTTP/1.1 200 "
 
 int
-http_response(char *line)
+http_response(const char *line)
 {
 	if (strncasecmp(line, HTTP10_OK, strlen(HTTP10_OK)) &&
 	    strncasecmp(line, HTTP11_OK, strlen(HTTP11_OK)))
@@ -89,15 +89,15 @@ http_getheaders(struct bufferevent *bev, struct argument *arg)
 {
 	struct evbuffer *input = EVBUFFER_INPUT(bev);
 	size_t off;
-	char *p;
+	unsigned char *p;
 
-	while ((p = evbuffer_find(input, "\n", 1)) != NULL) {
+	while ((p = evbuffer_find(input, (const unsigned char *)"\n", 1)) != NULL) {
 		off = (size_t)p - (size_t)EVBUFFER_DATA(input) + 1;
 		if (off > 1 && *(p-1) == '\r')
 			*(p-1) = '\0';
 		*p = '\0';
 
-		if (strlen(EVBUFFER_DATA(input)) == 0) {
+		if (strlen((const char *)EVBUFFER_DATA(input)) == 0) {
 			arg->a_flags |= HTTP_GOT_HEADERS;
 			evbuffer_drain(input, off);
 			break;
@@ -108,7 +108,7 @@ http_getheaders(struct bufferevent *bev, struct argument *arg)
 
 		/* Check that we got an okay */
 		if (!(arg->a_flags & HTTP_GOT_OK)) {
-			if (http_response(EVBUFFER_DATA(input)) == -1) {
+			if (http_response((const char *)EVBUFFER_DATA(input)) == -1) {
 				return (-1);
 			}
 			arg->a_flags |= HTTP_GOT_OK;
@@ -137,7 +137,7 @@ http_bufferanalyse(struct bufferevent *bev, struct argument *arg)
 	}
 
 	if (arg->a_flags & HTTP_GOT_HEADERS) {
-		if (evbuffer_find(input, "\r\n", 2) == NULL)
+		if (evbuffer_find(input, (const unsigned char *)"\r\n", 2) == NULL)
 			return (0);
 	
 		return (1);
@@ -174,8 +174,7 @@ http_makeconnect(struct bufferevent *bev, struct argument *arg)
 	socks_resolveaddress("www.google.com", &address);
 
 	evbuffer_add_printf(EVBUFFER_OUTPUT(bev),
-	    "CONNECT %s:80 HTTP/1.0\r\n"
-	    "\r\n", addr_ntoa(socks_dst_addr), SSHUSERAGENT);
+	    "CONNECT %s:80 HTTP/1.0\r\n\r\n", addr_ntoa(socks_dst_addr));
 	bufferevent_enable(bev, EV_WRITE);
 }
 
